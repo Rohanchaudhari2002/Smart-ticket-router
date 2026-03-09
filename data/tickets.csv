@@ -1,0 +1,151 @@
+ticket,department
+wifi not working,Network
+cannot connect to internet,Network
+network is down,Network
+vpn connection failed,Network
+slow internet speed,Network
+no network access,Network
+unable to connect to wifi,Network
+wireless signal weak,Network
+ethernet not working,Network
+network timeout error,Network
+router configuration issue,Network
+dns resolution failure,Network
+network adapter not found,Network
+packet loss on connection,Network
+firewall blocking connection,Network
+database connection error,Database
+sql query not working,Database
+database server down,Database
+cannot access database,Database
+database timeout,Database
+data not loading from db,Database
+database corruption detected,Database
+mysql connection refused,Database
+postgresql error,Database
+database backup failed,Database
+query performance issue,Database
+database disk full,Database
+stored procedure error,Database
+database migration failed,Database
+replication lag too high,Database
+email not syncing,Email
+cannot send emails,Email
+email server down,Email
+outlook not working,Email
+email attachment error,Email
+inbox not loading,Email
+smtp configuration error,Email
+email bouncing back,Email
+spam filter blocking emails,Email
+email account locked,Email
+calendar sync issue,Email
+distribution list error,Email
+email quota exceeded,Email
+imap connection failed,Email
+email signature not showing,Email
+unable to login,Authentication
+password reset not working,Authentication
+account locked out,Authentication
+two factor authentication issue,Authentication
+sso not working,Authentication
+login page error,Authentication
+session timeout,Authentication
+ldap authentication failed,Authentication
+active directory sync error,Authentication
+permission denied,Authentication
+user account disabled,Authentication
+forgot password,Authentication
+mfa token invalid,Authentication
+certificate authentication error,Authentication
+oauth token expired,Authentication
+computer running slow,Hardware
+laptop not turning on,Hardware
+keyboard not working,Hardware
+mouse not responding,Hardware
+monitor display issue,Hardware
+printer not working,Hardware
+hardware failure detected,Hardware
+hard drive making noise,Hardware
+battery not charging,Hardware
+usb port not working,Hardware
+screen flickering,Hardware
+blue screen of death,Hardware
+cpu overheating,Hardware
+ram memory error,Hardware
+webcam not detected,Hardware
+software installation failed,Software
+application crashing,Software
+software update error,Software
+program not responding,Software
+license key invalid,Software
+software compatibility issue,Software
+application performance slow,Software
+error launching program,Software
+software conflict detected,Software
+plugin not working,Software
+software rollback needed,Software
+version mismatch error,Software
+package dependency error,Software
+software patch failed,Software
+antivirus update failed,Software
+vpn not connecting,Network
+network card error,Network
+ip address conflict,Network
+proxy settings wrong,Network
+internet connection lost,Network
+cannot browse websites,Network
+ssh connection refused,Network
+ping timeout,Network
+bandwidth throttled,Network
+network switch offline,Network
+sql server error,Database
+oracle database crash,Database
+database locked,Database
+index rebuild failed,Database
+database connection pool exhausted,Database
+nosql query error,Database
+mongodb connection refused,Database
+database schema mismatch,Database
+transaction rollback error,Database
+database credentials invalid,Database
+outlook calendar not syncing,Email
+email forwarding not working,Email
+email rules not applying,Email
+mail server certificate error,Email
+email stuck in outbox,Email
+email folder missing,Email
+contacts not syncing,Email
+email search not working,Email
+meeting invite not received,Email
+email signature missing,Email
+windows login failed,Authentication
+biometric login not working,Authentication
+token expired,Authentication
+account creation failed,Authentication
+group policy error,Authentication
+saml authentication failing,Authentication
+kerberos ticket error,Authentication
+radius server unreachable,Authentication
+certificate expired,Authentication
+access control list error,Authentication
+laptop fan loud,Hardware
+desktop won't boot,Hardware
+graphics card failing,Hardware
+memory not detected,Hardware
+power supply failure,Hardware
+touchpad not working,Hardware
+headset not detected,Hardware
+docking station issues,Hardware
+external drive not recognized,Hardware
+scanner not working,Hardware
+office suite crashing,Software
+browser not working,Software
+zoom app issues,Software
+teams call failing,Software
+backup software error,Software
+remote desktop broken,Software
+file explorer crashing,Software
+print driver missing,Software
+software expired license,Software
+application update stuck,Software
