@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Ticket Router</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --surface:   #111118;
+    --border:    #1e1e2e;
+    --accent:    #7c6aff;
+    --accent2:   #ff6a9b;
+    --accent3:   #6affcc;
+    --text:      #e8e8f0;
+    --muted:     #5a5a78;
+    --high:      #ff5252;
+    --med:       #ffb84d;
+    --low:       #4dffb0;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Noise grain overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 999; opacity: .5;
+  }
+
+  /* ── Grid lines bg ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,255,.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Ambient glow blobs ── */
+  .blob {
+    position: fixed; border-radius: 50%;
+    filter: blur(120px); pointer-events: none; z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: rgba(124,106,255,.12); top: -150px; left: -100px; }
+  .blob-2 { width: 400px; height: 400px; background: rgba(255,106,155,.08); bottom: -100px; right: -100px; }
+  .blob-3 { width: 300px; height: 300px; background: rgba(106,255,204,.06); top: 50%; left: 60%; }
+
+  /* ── Layout ── */
+  .shell {
+    position: relative; z-index: 1;
+    max-width: 740px; margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  header { margin-bottom: 56px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    color: var(--accent); text-transform: uppercase;
+    border: 1px solid rgba(124,106,255,.3);
+    border-radius: 100px; padding: 5px 14px;
+    margin-bottom: 20px;
+    animation: fadeUp .6s ease both;
+  }
+  .badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease infinite;
+  }
+
+  h1 {
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -.02em;
+    animation: fadeUp .6s .1s ease both;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    margin-top: 14px; color: var(--muted);
+    font-size: 16px; line-height: 1.6;
+    animation: fadeUp .6s .2s ease both;
+  }
+
+  /* ── Input card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    animation: fadeUp .6s .3s ease both;
+    transition: border-color .3s;
+  }
+  .card:focus-within { border-color: rgba(124,106,255,.4); }
+
+  .card-label {
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  textarea {
+    width: 100%; min-height: 120px;
+    background: transparent;
+    border: none; outline: none; resize: vertical;
+    color: var(--text); font-family: var(--sans);
+    font-size: 17px; line-height: 1.6;
+    caret-color: var(--accent);
+  }
+  textarea::placeholder { color: var(--muted); }
+
+  .input-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 18px; padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .char-count {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+
+  /* ── Button ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--accent);
+    color: #fff; font-family: var(--sans); font-size: 15px; font-weight: 600;
+    border: none; border-radius: 10px; padding: 12px 24px;
+    cursor: pointer; transition: all .2s;
+    position: relative; overflow: hidden;
+  }
+  .btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,106,255,.4); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn svg { transition: transform .2s; }
+  .btn:hover svg { transform: translateX(3px); }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+
+  /* ── Result panel ── */
+  .result {
+    margin-top: 20px; opacity: 0; transform: translateY(12px);
+    transition: opacity .4s, transform .4s;
+    pointer-events: none;
+  }
+  .result.show { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+  .result-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 12px;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    position: relative; overflow: hidden;
+  }
+  .result-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+  }
+  .result-card.dept::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .result-card.prio::before { background: linear-gradient(90deg, var(--accent2), var(--accent3)); }
+
+  .rc-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+  .rc-value {
+    font-size: 24px; font-weight: 800; letter-spacing: -.02em;
+    line-height: 1;
+  }
+  .dept .rc-value { color: var(--accent); }
+
+  .priority-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 22px; font-weight: 800; letter-spacing: -.01em;
+  }
+  .prio-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .priority-High  .prio-dot { background: var(--high); box-shadow: 0 0 8px var(--high); }
+  .priority-Medium .prio-dot { background: var(--med); box-shadow: 0 0 8px var(--med); }
+  .priority-Low   .prio-dot { background: var(--low); box-shadow: 0 0 8px var(--low); }
+  .priority-High  .rc-value { color: var(--high); }
+  .priority-Medium .rc-value { color: var(--med); }
+  .priority-Low   .rc-value { color: var(--low); }
+
+  /* ── Confidence bar ── */
+  .confidence-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    margin-bottom: 12px;
+  }
+  .conf-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .conf-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .conf-pct { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--accent3); }
+  .conf-track {
+    height: 6px; background: var(--border); border-radius: 100px; overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    width: 0; transition: width .8s cubic-bezier(.16,1,.3,1);
+  }
+
+  /* ── All scores ── */
+  .scores-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .scores-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .score-row:last-child { margin-bottom: 0; }
+  .score-dept { font-size: 13px; font-weight: 600; width: 110px; flex-shrink: 0; }
+  .score-bar-track { flex: 1; height: 4px; background: var(--border); border-radius: 100px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 100px; background: var(--accent); opacity: .5; width: 0; transition: width .8s cubic-bezier(.16,1,.3,1); }
+  .score-bar-fill.top { background: var(--accent); opacity: 1; }
+  .score-pct { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 36px; text-align: right; flex-shrink: 0; }
+
+  /* ── Meta row ── */
+  .meta-row {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .meta-chip {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); display: flex; align-items: center; gap: 6px;
+  }
+  .meta-chip span { color: var(--text); }
+
+  /* ── Error ── */
+  .error-box {
+    background: rgba(255,82,82,.08);
+    border: 1px solid rgba(255,82,82,.25);
+    border-radius: 10px; padding: 14px 18px;
+    font-family: var(--mono); font-size: 13px; color: #ff5252;
+    margin-top: 20px; display: none;
+  }
+  .error-box.show { display: block; animation: fadeUp .3s ease both; }
+
+  /* ── Keyboard hint ── */
+  .hint {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    margin-top: 10px; text-align: right; animation: fadeUp .6s .5s ease both; opacity: 0;
+    animation-fill-mode: both;
+  }
+  kbd {
+    display: inline-block; padding: 2px 7px;
+    background: var(--border); border-radius: 4px;
+    font-size: 11px; border: 1px solid #2e2e40;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(124,106,255,.5); }
+    50% { box-shadow: 0 0 0 5px rgba(124,106,255,0); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 520px) {
+    .result-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="shell">
+
+  <header>
+    <div class="badge"><span class="badge-dot"></span> v1.0.0 · Live</div>
+    <h1>Smart <em>Ticket</em><br>Router</h1>
+    <p class="subtitle">Type an IT support ticket below. The model will instantly classify the department and priority level.</p>
+  </header>
+
+  <!-- Input card -->
+  <div class="card">
+    <div class="card-label">Ticket Input</div>
+    <textarea id="ticketInput" placeholder="e.g. Unable to login to VPN after password reset..." rows="4"></textarea>
+    <div class="input-footer">
+      <span class="char-count" id="charCount">0 / 5000</span>
+      <button class="btn" id="submitBtn" onclick="classify()">
+        <span id="btnText">Classify Ticket</span>
+        <svg id="btnIcon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to classify</p>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Result -->
+  <div class="result" id="result">
+
+    <div class="result-grid">
+      <div class="result-card dept">
+        <div class="rc-label">Department</div>
+        <div class="rc-value" id="deptValue">—</div>
+      </div>
+      <div class="result-card prio" id="prioCard">
+        <div class="rc-label">Priority</div>
+        <div class="rc-value">
+          <div class="priority-badge">
+            <div class="prio-dot"></div>
+            <span id="prioValue">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="confidence-card">
+      <div class="conf-header">
+        <span class="conf-label">Model Confidence</span>
+        <span class="conf-pct" id="confPct">0%</span>
+      </div>
+      <div class="conf-track">
+        <div class="conf-fill" id="confFill"></div>
+      </div>
+    </div>
+
+    <div class="scores-card">
+      <div class="scores-title">All Department Scores</div>
+      <div id="scoresBody"></div>
+    </div>
+
+    <div class="meta-row">
+      <span class="meta-chip">ticket id <span id="metaId">—</span></span>
+      <span class="meta-chip">latency <span id="metaLatency">—</span></span>
+      <span class="meta-chip">timestamp <span id="metaTs">—</span></span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:8000';
+  const input = document.getElementById('ticketInput');
+  const btn   = document.getElementById('submitBtn');
+
+  // Char counter
+  input.addEventListener('input', () => {
+    const n = input.value.length;
+    document.getElementById('charCount').textContent = `${n} / 5000`;
+  });
+
+  // Keyboard shortcut
+  input.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') classify();
+  });
+
+  function setLoading(on) {
+    btn.disabled = on;
+    document.getElementById('btnText').textContent = on ? 'Classifying…' : 'Classify Ticket';
+    const icon = document.getElementById('btnIcon');
+    if (on) {
+      icon.outerHTML = `<div class="spinner" id="btnIcon"></div>`;
+    } else {
+      const sp = document.getElementById('btnIcon');
+      if (sp) sp.outerHTML = `<svg id="btnIcon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorBox');
+    el.textContent = '⚠ ' + msg;
+    el.classList.add('show');
+  }
+  function clearError() {
+    const el = document.getElementById('errorBox');
+    el.classList.remove('show');
+  }
+
+  async function classify() {
+    const ticket = input.value.trim();
+    if (!ticket) { showError('Please enter a ticket description.'); return; }
+    clearError();
+    setLoading(true);
+    document.getElementById('result').classList.remove('show');
+
+    try {
+      const res = await fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      renderResult(data);
+
+    } catch (e) {
+      let msg = e.message;
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        msg = 'Cannot reach API at ' + API + '. Make sure uvicorn is running.';
+      }
+      showError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResult(data) {
+    // Department
+    document.getElementById('deptValue').textContent = data.department;
+
+    // Priority
+    const prioCard = document.getElementById('prioCard');
+    const prioVal  = document.getElementById('prioValue');
+    prioVal.textContent = data.priority;
+    prioCard.className = `result-card prio priority-${data.priority}`;
+
+    // Confidence
+    const pct = Math.round(data.confidence * 100);
+    document.getElementById('confPct').textContent = pct + '%';
+    setTimeout(() => {
+      document.getElementById('confFill').style.width = pct + '%';
+    }, 50);
+
+    // All scores
+    if (data.all_scores) {
+      const sorted = Object.entries(data.all_scores).sort((a,b) => b[1]-a[1]);
+      const topDept = sorted[0][0];
+      document.getElementById('scoresBody').innerHTML = sorted.map(([dept, score]) => {
+        const pct = Math.round(score * 100);
+        const isTop = dept === topDept;
+        return `
+          <div class="score-row">
+            <div class="score-dept">${dept}</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill ${isTop ? 'top' : ''}" data-w="${pct}"></div>
+            </div>
+            <div class="score-pct">${pct}%</div>
+          </div>`;
+      }).join('');
+      // Animate bars
+      setTimeout(() => {
+        document.querySelectorAll('.score-bar-fill').forEach(el => {
+          el.style.width = el.dataset.w + '%';
+        });
+      }, 80);
+    }
+
+    // Meta
+    document.getElementById('metaId').textContent = '#' + data.ticket_id;
+    document.getElementById('metaLatency').textContent = data.latency_ms + 'ms';
+    const ts = new Date(data.timestamp + 'Z');
+    document.getElementById('metaTs').textContent = ts.toLocaleTimeString();
+
+    document.getElementById('result').classList.add('show');
+  }
+</script>
+</body>
+</html>
